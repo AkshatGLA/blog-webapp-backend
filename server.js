@@ -64,7 +64,7 @@ app.use(express.urlencoded({extended:true}));
 // you will need to add that URL here in place of localhost.
 app.use(cors({
     // Allow both your local frontend AND your deployed frontend (if you have one)
-    origin: ["http://localhost:5173", "https://your-frontend-domain.vercel.app"], 
+    origin: ["http://localhost:5173", "https://blog-webapp-frontend.vercel.app"], 
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"]
 }));
