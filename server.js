@@ -63,9 +63,12 @@ app.use(express.urlencoded({extended:true}));
 // Note: If you deploy your Frontend to Vercel/Netlify later, 
 // you will need to add that URL here in place of localhost.
 app.use(cors({
-    origin: "http://localhost:5173", 
-    credentials:true
-}))
+    // Allow both your local frontend AND your deployed frontend (if you have one)
+    origin: ["http://localhost:5173", "https://your-frontend-domain.vercel.app"], 
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"]
+}));
+
 
 // Apis
 app.use("/api/v1/user", userRoute)
