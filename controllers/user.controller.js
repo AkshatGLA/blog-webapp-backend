@@ -36,12 +36,6 @@ export const register = async (req, res) => {
             return res.status(400).json({ success: false, message: "Email already exists" });
         }
 
-        // const existingUserByUsername = await User.findOne({ userName: userName });
-
-        // if (existingUserByUsername) {
-        //     return res.status(400).json({ success: false, message: "Username already exists" });
-        // }
-
         const hashedPassword = await bcrypt.hash(password, 10);
 
         await User.create({
@@ -93,7 +87,14 @@ export const login = async(req, res) => {
         }
         
         const token = await jwt.sign({userId:user._id}, process.env.SECRET_KEY, { expiresIn: '1d' })
-        return res.status(200).cookie("token", token, { maxAge: 1 * 24 * 60 * 60 * 1000, httpsOnly: true, sameSite: "strict" }).json({
+        
+        // 👇 FIXED COOKIE SETTINGS FOR CROSS-SITE (RENDER -> LOCALHOST) 👇
+        return res.status(200).cookie("token", token, { 
+            maxAge: 1 * 24 * 60 * 60 * 1000, 
+            httpOnly: true, 
+            sameSite: "none", // Critical: Allows cookie across different domains
+            secure: true      // Critical: Required when sameSite is 'none'
+        }).json({
             success:true,
             message:`Welcome back ${user.firstName}`,
             user
@@ -125,9 +126,6 @@ export const updateProfile = async(req, res) => {
         const {firstName, lastName, occupation, bio, instagram, facebook, linkedin, github} = req.body;
         const file = req.file;
 
-        const fileUri = getDataUri(file)
-        let cloudResponse = await cloudinary.uploader.upload(fileUri)
-
         const user = await User.findById(userId).select("-password")
         
         if(!user){
@@ -135,6 +133,13 @@ export const updateProfile = async(req, res) => {
                 message:"User not found",
                 success:false
             })
+        }
+
+        // Only upload to Cloudinary if a file was actually provided
+        if (file) {
+            const fileUri = getDataUri(file)
+            const cloudResponse = await cloudinary.uploader.upload(fileUri)
+            user.photoUrl = cloudResponse.secure_url
         }
 
         // updating data
@@ -146,7 +151,6 @@ export const updateProfile = async(req, res) => {
         if(linkedin) user.linkedin = linkedin
         if(github) user.github = github
         if(bio) user.bio = bio
-        if(file) user.photoUrl = cloudResponse.secure_url
 
         await user.save()
         return res.status(200).json({
